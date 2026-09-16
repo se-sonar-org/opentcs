@@ -36,6 +36,7 @@ import org.opentcs.data.model.Path;
 import org.opentcs.data.model.Point;
 import org.opentcs.data.model.Vehicle;
 import org.opentcs.drivers.vehicle.VehicleCommAdapterDescription;
+import org.opentcs.drivers.vehicle.VehicleCommAdapterMessage;
 import org.opentcs.drivers.vehicle.management.VehicleAttachmentInformation;
 import org.opentcs.kernel.extensions.servicewebapi.KernelExecutorWrapper;
 import org.opentcs.kernel.extensions.servicewebapi.v1.binding.GetVehicleResponseTO;
@@ -262,6 +263,29 @@ class VehicleHandlerTest {
   void throwOnSetEnvelopeUnknownVehicle() {
     assertThatExceptionOfType(ObjectUnknownException.class)
         .isThrownBy(() -> handler.putVehicleEnvelopeKey("some-unknown-vehicle", "some-key"));
+  }
+
+  @Test
+  void setVehicleCommAdapterPosition() {
+    // Act
+    handler.postVehicleCommAdapterPosition("some-vehicle", "some-point");
+
+    // Assert
+    ArgumentCaptor<VehicleCommAdapterMessage> captor
+        = ArgumentCaptor.forClass(VehicleCommAdapterMessage.class);
+    then(vehicleService)
+        .should()
+        .sendCommAdapterMessage(eq(vehicle.getReference()), captor.capture());
+    assertThat(captor.getValue().getType()).isEqualTo("tcs:virtualVehicle:setPosition");
+    assertThat(captor.getValue().getParameters()).containsEntry("position", "some-point");
+  }
+
+  @Test
+  void throwOnSetCommAdapterPositionForUnknownVehicle() {
+    assertThatExceptionOfType(ObjectUnknownException.class)
+        .isThrownBy(
+            () -> handler.postVehicleCommAdapterPosition("some-unknown-vehicle", "some-point")
+        );
   }
 
   @Test
