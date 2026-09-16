@@ -43,6 +43,24 @@ import org.opentcs.kernel.extensions.servicewebapi.v1.converter.VehicleConverter
  */
 public class VehicleHandler {
 
+  /**
+   * The comm adapter message type by which the loopback communication adapter (see
+   * {@code opentcs-commadapter-loopback}) sets a vehicle's position. Duplicated here as a string
+   * literal, as this module does not depend on the loopback adapter module.
+   */
+  private static final String LOOPBACK_MESSAGE_TYPE_SET_POSITION = "tcs:virtualVehicle:setPosition";
+  /**
+   * The comm adapter message type by which the loopback communication adapter resets a vehicle's
+   * position.
+   */
+  private static final String LOOPBACK_MESSAGE_TYPE_RESET_POSITION
+      = "tcs:virtualVehicle:resetPosition";
+  /**
+   * The name of the message parameter that carries the new position for
+   * {@link #LOOPBACK_MESSAGE_TYPE_SET_POSITION}.
+   */
+  private static final String LOOPBACK_MESSAGE_PARAM_POSITION = "position";
+
   private final InternalVehicleService vehicleService;
   private final RouterService routerService;
   private final KernelExecutorWrapper executorWrapper;
@@ -173,6 +191,38 @@ public class VehicleHandler {
       else {
         vehicleService.disableCommAdapter(vehicle.getReference());
       }
+    });
+  }
+
+  /**
+   * Sets or resets the position reported by the named vehicle's communication adapter.
+   * <p>
+   * This has the same effect as setting the position in the "Vehicle driver" panel of the
+   * openTCS Kernel Control Center for a vehicle attached to the loopback communication adapter.
+   * </p>
+   *
+   * @param name The name of the vehicle.
+   * @param newValue The name of the point to report as the vehicle's position, or {@code null}
+   * to reset/clear the reported position.
+   * @throws ObjectUnknownException If a vehicle with the given name does not exist.
+   */
+  public void postVehicleCommAdapterPosition(String name, @Nullable String newValue)
+      throws ObjectUnknownException {
+    requireNonNull(name, "name");
+
+    executorWrapper.callAndWait(() -> {
+      Vehicle vehicle = vehicleService.fetch(Vehicle.class, name)
+          .orElseThrow(() -> new ObjectUnknownException("Unknown vehicle: " + name));
+
+      vehicleService.sendCommAdapterMessage(
+          vehicle.getReference(),
+          newValue == null
+              ? new VehicleCommAdapterMessage(LOOPBACK_MESSAGE_TYPE_RESET_POSITION, Map.of())
+              : new VehicleCommAdapterMessage(
+                  LOOPBACK_MESSAGE_TYPE_SET_POSITION,
+                  Map.of(LOOPBACK_MESSAGE_PARAM_POSITION, newValue)
+              )
+      );
     });
   }
 
