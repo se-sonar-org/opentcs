@@ -43,6 +43,16 @@ import org.opentcs.kernel.extensions.servicewebapi.v1.converter.VehicleConverter
  */
 public class VehicleHandler {
 
+  /**
+   * The comm adapter message type used by (virtual) vehicles supporting a loopback-style
+   * "set position" message, e.g. the loopback communication adapter.
+   */
+  private static final String MESSAGE_TYPE_SET_POSITION = "tcs:virtualVehicle:setPosition";
+  /**
+   * The parameter key for the position value in a {@link #MESSAGE_TYPE_SET_POSITION} message.
+   */
+  private static final String MESSAGE_PARAM_POSITION = "position";
+
   private final InternalVehicleService vehicleService;
   private final RouterService routerService;
   private final KernelExecutorWrapper executorWrapper;
@@ -227,6 +237,37 @@ public class VehicleHandler {
           new VehicleCommAdapterMessage(
               request.getType(),
               toParameterMap(request.getParameters())
+          )
+      );
+    });
+  }
+
+  /**
+   * Sets the position of the vehicle with the given name by sending a corresponding message to
+   * its comm adapter.
+   * <p>
+   * This is equivalent to setting the vehicle's position via the "Vehicle driver" panel in the
+   * openTCS Kernel Control Center for vehicles attached to the loopback communication adapter.
+   * </p>
+   *
+   * @param name The name of the vehicle.
+   * @param newValue The name of the point the vehicle is to be positioned at.
+   * @throws ObjectUnknownException If a vehicle with the given name does not exist.
+   */
+  public void postVehicleCommAdapterPosition(String name, String newValue)
+      throws ObjectUnknownException {
+    requireNonNull(name, "name");
+    requireNonNull(newValue, "newValue");
+
+    executorWrapper.callAndWait(() -> {
+      Vehicle vehicle = vehicleService.fetch(Vehicle.class, name)
+          .orElseThrow(() -> new ObjectUnknownException("Unknown vehicle: " + name));
+
+      vehicleService.sendCommAdapterMessage(
+          vehicle.getReference(),
+          new VehicleCommAdapterMessage(
+              MESSAGE_TYPE_SET_POSITION,
+              Map.of(MESSAGE_PARAM_POSITION, newValue)
           )
       );
     });
