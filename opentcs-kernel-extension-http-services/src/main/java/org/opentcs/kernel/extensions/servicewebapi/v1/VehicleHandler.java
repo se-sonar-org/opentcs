@@ -43,6 +43,22 @@ import org.opentcs.kernel.extensions.servicewebapi.v1.converter.VehicleConverter
  */
 public class VehicleHandler {
 
+  /**
+   * The type of comm adapter message understood by the loopback communication adapter for
+   * setting a vehicle's position.
+   */
+  private static final String MESSAGE_TYPE_SET_POSITION = "tcs:virtualVehicle:setPosition";
+  /**
+   * The type of comm adapter message understood by the loopback communication adapter for
+   * resetting a vehicle's position.
+   */
+  private static final String MESSAGE_TYPE_RESET_POSITION = "tcs:virtualVehicle:resetPosition";
+  /**
+   * The name of the parameter carrying the position in a {@link #MESSAGE_TYPE_SET_POSITION}
+   * message.
+   */
+  private static final String MESSAGE_PARAM_POSITION = "position";
+
   private final InternalVehicleService vehicleService;
   private final RouterService routerService;
   private final KernelExecutorWrapper executorWrapper;
@@ -228,6 +244,35 @@ public class VehicleHandler {
               request.getType(),
               toParameterMap(request.getParameters())
           )
+      );
+    });
+  }
+
+  /**
+   * Sets or resets the position of the vehicle with the given name via its (loopback)
+   * communication adapter.
+   *
+   * @param name The name of the vehicle.
+   * @param newValue The name of the point the vehicle is to be set to, or {@code null}/blank to
+   * reset the vehicle's position.
+   * @throws ObjectUnknownException If a vehicle with the given name does not exist.
+   */
+  public void postVehicleCommAdapterPosition(String name, String newValue)
+      throws ObjectUnknownException {
+    requireNonNull(name, "name");
+
+    executorWrapper.callAndWait(() -> {
+      Vehicle vehicle = vehicleService.fetch(Vehicle.class, name)
+          .orElseThrow(() -> new ObjectUnknownException("Unknown vehicle: " + name));
+
+      vehicleService.sendCommAdapterMessage(
+          vehicle.getReference(),
+          newValue == null || newValue.isBlank()
+              ? new VehicleCommAdapterMessage(MESSAGE_TYPE_RESET_POSITION, Map.of())
+              : new VehicleCommAdapterMessage(
+                  MESSAGE_TYPE_SET_POSITION,
+                  Map.of(MESSAGE_PARAM_POSITION, newValue)
+              )
       );
     });
   }

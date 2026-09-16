@@ -486,6 +486,44 @@ paths:
                     type: string
                     description: Details on the actual error.
                     example: Could not find vehicle 'Vehicle-0001'.
+  "/vehicles/{NAME}/commAdapter/position":
+    post:
+      tags:
+        - Vehicles
+      summary: Sets or resets the position of the named vehicle via its (loopback) driver.
+      description: >-
+        Sets the position reported by the named vehicle's communication adapter, the same way
+        the loopback vehicle driver panel in the Kernel Control Center does.
+        Only works for vehicles using the loopback communication adapter.
+      parameters:
+        - name: NAME
+          in: path
+          description: The name of the vehicle.
+          required: true
+          schema:
+            type: string
+        - name: newValue
+          in: query
+          description: >-
+            The name of the point the vehicle's position is to be set to.
+            If omitted or empty, the vehicle's position is reset.
+          required: false
+          example: Point-0001
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+        "404":
+          description: Referencing object that could not be found.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: Details on the actual error.
+                  example: Could not find vehicle 'Vehicle-0001'.
   "/vehicles/{NAME}/routeComputationQuery":
     post:
       tags:
