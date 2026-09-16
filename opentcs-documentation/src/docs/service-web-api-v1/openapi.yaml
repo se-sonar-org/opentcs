@@ -103,6 +103,8 @@ paths:
     $ref: './paths/vehicles.yaml#/paths/~1vehicles~1{NAME}~1commAdapter~1enabled'
   "/vehicles/{NAME}/commAdapter/message":
     $ref: './paths/vehicles.yaml#/paths/~1vehicles~1{NAME}~1commAdapter~1message'
+  "/vehicles/{NAME}/commAdapter/position":
+    $ref: './paths/vehicles.yaml#/paths/~1vehicles~1{NAME}~1commAdapter~1position'
   "/vehicles/{NAME}/routeComputationQuery":
     $ref: './paths/vehicles.yaml#/paths/~1vehicles~1{NAME}~1routeComputationQuery'
   "/vehicles/{NAME}/envelopeKey":
