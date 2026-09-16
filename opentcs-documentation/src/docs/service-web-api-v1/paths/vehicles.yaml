@@ -486,6 +486,41 @@ paths:
                     type: string
                     description: Details on the actual error.
                     example: Could not find vehicle 'Vehicle-0001'.
+  "/vehicles/{NAME}/commAdapter/position":
+    post:
+      tags:
+        - Vehicles
+      summary: Sets the position of the named vehicle, via its driver.
+      description: >-
+        This is equivalent to setting the vehicle's position via the "Vehicle driver" panel in the openTCS Kernel Control Center.
+        It relies on the vehicle's driver supporting the corresponding comm adapter message (as the loopback driver does).
+      parameters:
+        - name: NAME
+          in: path
+          description: The name of the vehicle.
+          required: true
+          schema:
+            type: string
+        - name: newValue
+          in: query
+          description: The name of the point at which the vehicle is to be positioned. If omitted, the vehicle's position is reset/cleared.
+          required: false
+          example: Point-0001
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+        "404":
+          description: Referencing object that could not be found.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: Details on the actual error.
+                  example: Could not find vehicle 'Vehicle-0001'.
   "/vehicles/{NAME}/routeComputationQuery":
     post:
       tags:
