@@ -43,6 +43,20 @@ import org.opentcs.kernel.extensions.servicewebapi.v1.converter.VehicleConverter
  */
 public class VehicleHandler {
 
+  /**
+   * The comm adapter message type used to set a vehicle's position.
+   * <p>
+   * This corresponds to the message type
+   * {@code org.opentcs.virtualvehicle.LoopbackCommAdapterMessages#SET_POSITION}, which is
+   * supported by the loopback vehicle driver. Other vehicle drivers may or may not support it.
+   * </p>
+   */
+  private static final String MESSAGE_TYPE_SET_POSITION = "tcs:virtualVehicle:setPosition";
+  /**
+   * The parameter key for the position value of a {@link #MESSAGE_TYPE_SET_POSITION} message.
+   */
+  private static final String MESSAGE_PARAM_POSITION = "position";
+
   private final InternalVehicleService vehicleService;
   private final RouterService routerService;
   private final KernelExecutorWrapper executorWrapper;
@@ -207,6 +221,32 @@ public class VehicleHandler {
                   () -> new IllegalArgumentException("Unknown vehicle driver class name: " + value)
               );
       vehicleService.attachCommAdapter(vehicle.getReference(), newAdapter);
+    });
+  }
+
+  /**
+   * Sets the position of the vehicle with the given name via its comm adapter.
+   *
+   * @param name The name of the vehicle.
+   * @param value The name of the point the vehicle is to be set to.
+   * @throws ObjectUnknownException If a vehicle with the given name does not exist.
+   */
+  public void postVehicleCommAdapterPosition(String name, String value)
+      throws ObjectUnknownException {
+    requireNonNull(name, "name");
+    requireNonNull(value, "value");
+
+    executorWrapper.callAndWait(() -> {
+      Vehicle vehicle = vehicleService.fetch(Vehicle.class, name)
+          .orElseThrow(() -> new ObjectUnknownException("Unknown vehicle: " + name));
+
+      vehicleService.sendCommAdapterMessage(
+          vehicle.getReference(),
+          new VehicleCommAdapterMessage(
+              MESSAGE_TYPE_SET_POSITION,
+              Map.of(MESSAGE_PARAM_POSITION, value)
+          )
+      );
     });
   }
 
