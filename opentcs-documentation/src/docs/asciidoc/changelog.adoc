@@ -20,6 +20,9 @@ This change log lists the most relevant changes for past releases in reverse chr
 
 == Unreleased
 
+* New features:
+** Add support for setting a vehicle's (loopback) position via the web API
+   (`POST /vehicles/{NAME}/commAdapter/position`).
 * Bugs fixed:
 ** Allow to properly change the name of an already named transport order destination's location via the Java API.
 ** Ensure that orders for automatic recharging do not try to send vehicles to locked locations.
