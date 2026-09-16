@@ -43,6 +43,16 @@ import org.opentcs.kernel.extensions.servicewebapi.v1.converter.VehicleConverter
  */
 public class VehicleHandler {
 
+  /**
+   * The message type used by the loopback communication adapter to set a vehicle's position.
+   * (Kept as a local constant, as this module must not depend on the loopback adapter module.)
+   */
+  private static final String MESSAGE_TYPE_SET_POSITION = "tcs:virtualVehicle:setPosition";
+  /**
+   * The message parameter for the position to be set.
+   */
+  private static final String MESSAGE_PARAM_POSITION = "position";
+
   private final InternalVehicleService vehicleService;
   private final RouterService routerService;
   private final KernelExecutorWrapper executorWrapper;
@@ -227,6 +237,36 @@ public class VehicleHandler {
           new VehicleCommAdapterMessage(
               request.getType(),
               toParameterMap(request.getParameters())
+          )
+      );
+    });
+  }
+
+  /**
+   * Sets the position of the vehicle with the given name via its communication adapter.
+   * <p>
+   * This has the same effect as setting the vehicle's position via the loopback driver's panel
+   * in the Kernel Control Center.
+   * </p>
+   *
+   * @param name The name of the vehicle.
+   * @param value The name of the point the vehicle is to be positioned at.
+   * @throws ObjectUnknownException If a vehicle with the given name does not exist.
+   */
+  public void postVehicleCommAdapterPosition(String name, String value)
+      throws ObjectUnknownException {
+    requireNonNull(name, "name");
+    requireNonNull(value, "value");
+
+    executorWrapper.callAndWait(() -> {
+      Vehicle vehicle = vehicleService.fetch(Vehicle.class, name)
+          .orElseThrow(() -> new ObjectUnknownException("Unknown vehicle: " + name));
+
+      vehicleService.sendCommAdapterMessage(
+          vehicle.getReference(),
+          new VehicleCommAdapterMessage(
+              MESSAGE_TYPE_SET_POSITION,
+              Map.of(MESSAGE_PARAM_POSITION, value)
           )
       );
     });
