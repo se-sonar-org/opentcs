@@ -486,6 +486,43 @@ paths:
                     type: string
                     description: Details on the actual error.
                     example: Could not find vehicle 'Vehicle-0001'.
+  "/vehicles/{NAME}/commAdapter/position":
+    post:
+      tags:
+        - Vehicles
+      summary: Sets the position reported by the named vehicle's driver.
+      description: >-
+        Equivalent to setting the vehicle's position via the "Current position/state" panel of the
+        vehicle driver window in the Kernel Control Center.
+        Only supported by drivers that implement the corresponding comm adapter message (e.g. the
+        loopback driver).
+      parameters:
+        - name: NAME
+          in: path
+          description: The name of the vehicle.
+          required: true
+          schema:
+            type: string
+        - name: newValue
+          in: query
+          description: The name of the point the vehicle is to be placed on.
+          required: true
+          example: Point-0001
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+        "404":
+          description: Referencing object that could not be found.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: Details on the actual error.
+                  example: Could not find vehicle 'Vehicle-0001'.
   "/vehicles/{NAME}/routeComputationQuery":
     post:
       tags:

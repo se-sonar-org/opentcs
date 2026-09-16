@@ -43,6 +43,16 @@ import org.opentcs.kernel.extensions.servicewebapi.v1.converter.VehicleConverter
  */
 public class VehicleHandler {
 
+  /**
+   * The type of comm adapter message used to set a vehicle's position.
+   * (Supported by, e.g., the loopback comm adapter.)
+   */
+  private static final String SET_POSITION_MESSAGE_TYPE = "tcs:virtualVehicle:setPosition";
+  /**
+   * The parameter of the {@link #SET_POSITION_MESSAGE_TYPE} message that carries the position.
+   */
+  private static final String SET_POSITION_MESSAGE_PARAM_POSITION = "position";
+
   private final InternalVehicleService vehicleService;
   private final RouterService routerService;
   private final KernelExecutorWrapper executorWrapper;
@@ -207,6 +217,25 @@ public class VehicleHandler {
                   () -> new IllegalArgumentException("Unknown vehicle driver class name: " + value)
               );
       vehicleService.attachCommAdapter(vehicle.getReference(), newAdapter);
+    });
+  }
+
+  public void putVehicleCommAdapterPosition(String name, String value)
+      throws ObjectUnknownException {
+    requireNonNull(name, "name");
+    requireNonNull(value, "value");
+
+    executorWrapper.callAndWait(() -> {
+      Vehicle vehicle = vehicleService.fetch(Vehicle.class, name)
+          .orElseThrow(() -> new ObjectUnknownException("Unknown vehicle: " + name));
+
+      vehicleService.sendCommAdapterMessage(
+          vehicle.getReference(),
+          new VehicleCommAdapterMessage(
+              SET_POSITION_MESSAGE_TYPE,
+              Map.of(SET_POSITION_MESSAGE_PARAM_POSITION, value)
+          )
+      );
     });
   }
 
