@@ -1,0 +1,60 @@
+<!-- SPDX-FileCopyrightText: The openTCS Authors -->
+<!-- SPDX-License-Identifier: MIT -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>openTCS Fleet 3D Viewer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <h1>openTCS Fleet 3D Viewer</h1>
+
+      <section id="connection-panel">
+        <label for="api-base-url">Kernel API base URL</label>
+        <input id="api-base-url" type="text" value="http://localhost:55200/v1">
+
+        <label for="api-access-key">Access key (optional)</label>
+        <input id="api-access-key" type="password" value="">
+
+        <label for="poll-interval">Update interval (ms)</label>
+        <input id="poll-interval" type="number" min="100" step="100" value="1000">
+
+        <button id="connect-button" type="button">Connect</button>
+        <p id="connection-status">Not connected.</p>
+      </section>
+
+      <section id="vehicle-list-panel">
+        <h2>Vehicles</h2>
+        <ul id="vehicle-list"></ul>
+      </section>
+
+      <section id="legend-panel">
+        <h2>State</h2>
+        <ul id="legend-list">
+          <li><span class="legend-swatch" style="background:#4caf50"></span>Executing</li>
+          <li><span class="legend-swatch" style="background:#2196f3"></span>Charging</li>
+          <li><span class="legend-swatch" style="background:#9e9e9e"></span>Idle</li>
+          <li><span class="legend-swatch" style="background:#f44336"></span>Error</li>
+          <li><span class="legend-swatch" style="background:#616161"></span>Unavailable</li>
+          <li><span class="legend-swatch" style="background:#9c27b0"></span>Unknown</li>
+        </ul>
+      </section>
+    </aside>
+
+    <main id="scene-container"></main>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
