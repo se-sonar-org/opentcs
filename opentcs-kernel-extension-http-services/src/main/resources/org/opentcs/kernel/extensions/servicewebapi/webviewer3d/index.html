@@ -1,0 +1,307 @@
+<!--
+SPDX-FileCopyrightText: The openTCS Authors
+SPDX-License-Identifier: MIT
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>openTCS &ndash; 3D Fleet Viewer</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #14171c;
+    --panel-bg: rgba(24, 28, 35, 0.92);
+    --panel-border: #33394a;
+    --text: #e6e9ef;
+    --text-dim: #9aa3b2;
+    --accent: #4f9dff;
+    --ok: #3ecf6a;
+    --warn: #f5c542;
+    --err: #ef5757;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    overflow: hidden;
+  }
+
+  #viewport {
+    position: fixed;
+    inset: 0;
+  }
+
+  #viewport canvas {
+    display: block;
+  }
+
+  .panel {
+    position: fixed;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  }
+
+  .panel h2 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  #settingsPanel {
+    top: 14px;
+    left: 14px;
+    width: 300px;
+  }
+
+  #settingsPanel .row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  #settingsPanel label {
+    display: block;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+  }
+
+  #settingsPanel input {
+    width: 100%;
+    background: #0f1216;
+    border: 1px solid var(--panel-border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+
+  #settingsPanel button {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    border-radius: 4px;
+    color: #08131f;
+    font-weight: 600;
+    padding: 8px;
+    cursor: pointer;
+  }
+
+  #settingsPanel button:hover {
+    filter: brightness(1.1);
+  }
+
+  #statusLine {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-dim);
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    flex: none;
+  }
+
+  .dot.connecting { background: var(--warn); }
+  .dot.connected { background: var(--ok); }
+  .dot.disconnected { background: var(--err); }
+
+  #errorLine {
+    margin-top: 6px;
+    color: var(--err);
+    word-break: break-word;
+    display: none;
+  }
+
+  #fleetPanel {
+    top: 14px;
+    right: 14px;
+    width: 260px;
+    max-height: calc(100vh - 28px);
+    overflow-y: auto;
+  }
+
+  #fleetList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #fleetList li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 6px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  #fleetList li:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  #fleetList li.selected {
+    background: rgba(79, 157, 255, 0.18);
+    outline: 1px solid var(--accent);
+  }
+
+  #fleetList .swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex: none;
+  }
+
+  #fleetList .name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #fleetList .state {
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+
+  #fleetEmpty {
+    color: var(--text-dim);
+  }
+
+  #detailPanel {
+    bottom: 14px;
+    left: 14px;
+    width: 300px;
+    display: none;
+  }
+
+  #detailPanel dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 10px;
+  }
+
+  #detailPanel dt {
+    color: var(--text-dim);
+  }
+
+  #detailPanel dd {
+    margin: 0;
+    text-align: right;
+  }
+
+  #legendPanel {
+    bottom: 14px;
+    right: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  #legendPanel .item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-dim);
+  }
+
+  #legendPanel .swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  #hint {
+    position: fixed;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text-dim);
+    font-size: 11px;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div id="viewport"></div>
+
+  <div id="settingsPanel" class="panel">
+    <h2>Connection</h2>
+    <div class="row">
+      <div style="flex:1">
+        <label for="baseUrlInput">Kernel API base URL</label>
+        <input id="baseUrlInput" type="text" placeholder="http://localhost:55200" />
+      </div>
+    </div>
+    <div class="row">
+      <div style="flex:1">
+        <label for="accessKeyInput">Access key (optional)</label>
+        <input id="accessKeyInput" type="password" placeholder="X-Api-Access-Key" />
+      </div>
+    </div>
+    <button id="connectButton" type="button">Connect</button>
+    <div id="statusLine">
+      <span id="statusDot" class="dot"></span>
+      <span id="statusText">Not connected</span>
+    </div>
+    <div id="errorLine"></div>
+  </div>
+
+  <div id="fleetPanel" class="panel">
+    <h2>Fleet (<span id="fleetCount">0</span>)</h2>
+    <div id="fleetEmpty">No vehicles yet.</div>
+    <ul id="fleetList"></ul>
+  </div>
+
+  <div id="detailPanel" class="panel">
+    <h2 id="detailName">Vehicle</h2>
+    <dl>
+      <dt>State</dt><dd id="detailState">&ndash;</dd>
+      <dt>Energy</dt><dd id="detailEnergy">&ndash;</dd>
+      <dt>Position</dt><dd id="detailPosition">&ndash;</dd>
+      <dt>Orientation</dt><dd id="detailOrientation">&ndash;</dd>
+      <dt>Order</dt><dd id="detailOrder">&ndash;</dd>
+    </dl>
+  </div>
+
+  <div id="legendPanel" class="panel">
+    <div class="item"><span class="swatch" style="background:#3ecf6a"></span>Executing</div>
+    <div class="item"><span class="swatch" style="background:#4f9dff"></span>Charging</div>
+    <div class="item"><span class="swatch" style="background:#9aa3b2"></span>Idle</div>
+    <div class="item"><span class="swatch" style="background:#f5c542"></span>Unavailable</div>
+    <div class="item"><span class="swatch" style="background:#ef5757"></span>Error</div>
+  </div>
+
+  <div id="hint">Drag to orbit &middot; scroll to zoom &middot; right-drag to pan &middot; click a vehicle for details</div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three.module.min.js"
+      }
+    }
+  </script>
+  <script type="module" src="./viewer3d.js"></script>
+</body>
+</html>
