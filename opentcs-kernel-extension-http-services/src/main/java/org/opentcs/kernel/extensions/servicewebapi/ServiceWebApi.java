@@ -9,6 +9,7 @@ import io.javalin.Javalin;
 import io.javalin.community.ssl.SslPlugin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.HttpResponseException;
+import io.javalin.http.staticfiles.Location;
 import jakarta.inject.Inject;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -138,6 +139,14 @@ public class ServiceWebApi
       }
 
       cfg.routes.sse("/v1/sse", v1SseHandler::handleSseConnection);
+
+      // Serves the browser-based 3D fleet map viewer. These are static assets only (no kernel
+      // data), so they are exempt from the access key check below.
+      cfg.staticFiles.add(staticFiles -> {
+        staticFiles.hostedPath = "/webviewer3d";
+        staticFiles.directory = "org/opentcs/kernel/extensions/servicewebapi/webviewer3d";
+        staticFiles.location = Location.CLASSPATH;
+      });
 
       cfg.routes.beforeMatched(ctx -> {
         if (!authenticator.isAuthenticated(ctx)) {
